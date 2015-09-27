@@ -18,6 +18,10 @@ if !has("g:rtagsMinCharsForCommandCompletion")
     let g:rtagsMinCharsForCommandCompletion = 4
 endif
 
+if !exists("g:rtagsJobTimeout")
+    let g:rtagsJobTimeout = 0
+endif
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
@@ -39,31 +43,6 @@ endif
 " return Byte offset in the file for the current cursor position
 function! LineCol2Offset()
     return line2byte('.') + col('.') - 1
-endfunction
-" }}}
-
-" Offset2LineCol: {{{
-" param filepath - fullpath to a file
-" param offset - byte offset in the file
-" returns [ line #, column # ]
-function! Offset2LineCol(filepath, offset)
-python << endscript
-import vim
-f = open(vim.eval("a:filepath"))
-
-row = 1
-offset = int(vim.eval("a:offset"))
-for line in f:
-    if offset <= len(line):
-        col = offset
-        break
-    else:
-        offset -= len(line)
-        row += 1
-
-f.close()
-vim.command("return [%d, %s]" % (row, col))
-endscript
 endfunction
 " }}}
 
@@ -89,6 +68,10 @@ function! rtags#ExecuteRC(args, ...)
             let cmd .= " ".value
         endif
     endfor
+    if g:rtagsJobTimeout > 0
+        let timeout = g:rtagsJobTimeout*1000
+        let cmd .= " --timeout ".timeout
+    endif
     let output = system(cmd)
     if v:shell_error && len(output) > 0
         let output = substitute(output, '\n', '', '')
