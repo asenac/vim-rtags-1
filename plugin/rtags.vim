@@ -14,6 +14,10 @@ if !has("g:rtagsUseDefaultMappings")
     let g:rtagsUseDefaultMappings = 1
 endif
 
+if !exists("g:rtagsJobTimeout")
+    let g:rtagsJobTimeout = 0
+endif
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
@@ -60,6 +64,10 @@ function! rtags#ExecuteRC(args, ...)
             let cmd .= " ".value
         endif
     endfor
+    if g:rtagsJobTimeout > 0
+        let timeout = g:rtagsJobTimeout*1000
+        let cmd .= " --timeout ".timeout
+    endif
     let output = system(cmd)
     if output =~ '^Not indexed'
         echohl ErrorMsg | echomsg "[vim-rtags] Current file is not indexed!" | echohl None
