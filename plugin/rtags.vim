@@ -30,13 +30,12 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rT :call rtags#JumpTo("tab")<CR>
     noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
-    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols")<CR>
+    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap <Leader>rv :call rtags#FindVirtuals()<CR>
-    noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
 " LineCol2Offset {{{
@@ -56,6 +55,14 @@ endfunction
 " return output split by newline
 function! rtags#ExecuteRC(args, ...)
     let cmd = rtags#getRcCmd()
+
+    " Give rdm unsaved file content, so that you don't have to save files
+    " before each rc invocation.
+    let unsaved_content = join(getline(1, line('$')), "\n")
+    let filename = expand("%")
+    let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+
+    " prepare for the actual command invocation
     if a:0 > 0
         let longArgs = a:1
         for longArg in longArgs
@@ -72,6 +79,7 @@ function! rtags#ExecuteRC(args, ...)
         let timeout = g:rtagsJobTimeout*1000
         let cmd .= " --timeout ".timeout
     endif
+
     let output = system(cmd)
     if v:shell_error && len(output) > 0
         let output = substitute(output, '\n', '', '')
@@ -399,16 +407,16 @@ function! rtags#CompleteAtCursor(wordStart, base)
 "    sleep 1
 "    echomsg "DURING INVOCATION POS: ".pos[2]
 "    sleep 1
-    echomsg stdin_lines
+"    echomsg stdin_lines
 "    sleep 1
     " sed command to remove CDATA prefix and closing xml tag from rtags output
     let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
     let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
-    echomsg cmd
-    sleep 1
+"    echomsg cmd
+"    sleep 1
     let result = split(system(cmd, stdin_lines), '\n\+')
-    echomsg "Got ".len(result)." completions"
-    sleep 1
+"    echomsg "Got ".len(result)." completions"
+"    sleep 1
     return result
 "    for r in result
 "        echo r
@@ -430,8 +438,8 @@ endfunction
 "     portion
 """
 function! RtagsCompleteFunc(findstart, base)
-    echomsg "RtagsCompleteFunc: [".a:findstart."], [".a:base."]"
-    sleep 1
+"    echomsg "RtagsCompleteFunc: [".a:findstart."], [".a:base."]"
+"    sleep 1
     if a:findstart
         " todo: find word start
         exec "normal \<Esc>"
