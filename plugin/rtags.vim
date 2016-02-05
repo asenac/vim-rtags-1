@@ -3,8 +3,13 @@ if !has("python")
     echohl ErrorMsg | echomsg "[vim-rtags] Python support is disabled!" | echohl None
 endif
 
-let g:rcCmd = "rc"
-let g:excludeSysHeaders = 0
+if !exists("g:rtagsRcCmd")
+    let g:rtagsRcCmd = "rc"
+endif
+
+if !exists("g:rtagsExcludeSysHeaders")
+    let g:rtagsExcludeSysHeaders = 0
+endif
 
 if !exists("g:rtagsUseLocationList")
     let g:rtagsUseLocationList = 1
@@ -22,6 +27,10 @@ if !exists("g:rtagsJobTimeout")
     let g:rtagsJobTimeout = 0
 endif
 
+if !exists("g:rtagsMaxSearchResultWindowHeight")
+    let g:rtagsMaxSearchResultWindowHeight = 10
+endif
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
@@ -36,6 +45,8 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap <Leader>rv :call rtags#FindVirtuals()<CR>
+
+    noremap <Leader>rjb <C-o>
 endif
 
 " LineCol2Offset {{{
@@ -133,23 +144,24 @@ endfunction
 " Format of each line: <path>,<line>\s<text>
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
+    let num_of_locations = len(locations)
     if g:rtagsUseLocationList == 1
         call setloclist(winnr(), locations)
-        if len(locations) > 0
-            lopen
+        if num_of_locations > 0
+            exe 'lopen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
         endif
     else
         call setqflist(locations)
-        if len(locations) > 0
-            copen
+        if num_of_locations > 0
+            exe 'copen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
         endif
     endif
 endfunction
 
 function! rtags#getRcCmd()
-    let cmd = g:rcCmd
+    let cmd = g:rtagsRcCmd
     let cmd .= " --absolute-path "
-    if g:excludeSysHeaders == 1
+    if g:rtagsExcludeSysHeaders == 1
         return cmd." -H "
     endif
     return cmd
@@ -376,6 +388,7 @@ function! rtags#FindSymbolsOfWordUnderCursor()
     let wordUnderCursor = expand("<cword>")
     call rtags#FindSymbols(wordUnderCursor)
 endfunction
+
 
 "
 " This function assumes it is invoked from insert mode
